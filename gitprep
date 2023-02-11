@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+########################
+# Author: vadiku
+# Date: 2023-02-11
+###########################
+
+version="0.0.1"
+
+script_name=$(basename "$0")
+
+usage() {
+    cat <<EOF
+Script name: $script_name
+Description:
+============
+======================================
+See https://github.com/vadiku/gitprep
+Usage:
+$script_name [ -n | --name user_name ] [ -e | --email user_email ] [-t | --ticket ticket_regex] [-rm | -h | --help | -v | --version]
+
+Examples:
+
+EOF
+}
+
+while (($# > 0)); do # while arguments count>0
+    case "$1" in
+    -n | --name)
+        user_name=$2
+        name_branch=true
+        shift
+        ;;
+    -e | --email)
+        user_email=$2
+        email_branch=true
+        shift
+        ;;
+    -t | --ticket)
+        tickets_regexp=$2
+        ticket_branch=true
+        shift
+        ;;
+    -r | --rm)
+        remove_branch=true
+        shift
+        ;; 
+    -h | --help)
+        usage
+        exit
+        ;;
+    -v | --version)
+        echo ${version}
+        exit
+        ;;
+    *) # unknown flag/switch
+        POSITIONAL+=("$1")
+        shift
+        ;;
+    esac
+done
+
+if [[ ! -z "$user_name" ]]; then
+    git config user.name "$user_name"
+fi
+
+if [[ ! -z "$user_email" ]]; then
+    git config user.email "$user_email"
+fi
+
+if [[ ! -z "$tickets_regexp" ]]; then
+    hook_template=`cat scripts/enrich_commit_message_with_ticket`
+    tickets_template="{{tickets}}"
+    commit_msg_hook=$(echo "$hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
+    echo "$commit_msg_hook" > .git/hooks/prepare-commit-msg
+    chmod +x .git/hooks/prepare-commit-msg
+fi
+
+if [[ $remove_branch == true ]]; then
+    if [[ $name_branch == true ]]; then
+        git config user.name ""
+    fi
+
+    if [[ $email_branch == true ]]; then
+        git config user.email ""
+    fi
+
+    if [[ $ticket_branch == true ]]; then
+        rm -f .git/hooks/prepare-commit-msg
+    fi
+fi

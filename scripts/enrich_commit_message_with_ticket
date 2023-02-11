@@ -1,0 +1,12 @@
+#!/bin/bash
+FILE=$1
+MESSAGE=$(cat $FILE)
+TICKET=$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\w+/)?(?i)({{tickets}})[-][0-9]+' | grep -Eo '(?i)({{tickets}})[-][0-9]+' | tr "[:lower:]" "[:upper:]")
+if [[ $TICKET == "" ]];then
+  echo 'ERROR: branch does not contain ticket information!'
+  exit 1;
+elif [[ $MESSAGE == "Merge"* || "$MESSAGE" == "$TICKET"* ]];then
+  exit 0;
+else
+  echo "$TICKET $MESSAGE" > $FILE
+fi
