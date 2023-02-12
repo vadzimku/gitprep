@@ -11,15 +11,17 @@ script_name=$(basename "$0")
 
 usage() {
     cat <<EOF
-Script name: $script_name
-Description:
-============
-======================================
-See https://github.com/vadiku/gitprep
-Usage:
-$script_name [ -n | --name user_name ] [ -e | --email user_email ] [-t | --ticket ticket_regex] [-rm | -h | --help | -v | --version]
+Usage: $script_name [options]
 
-Examples:
+  -h | --help                       print this help message
+  -v | --version                    print utility version
+  -p | --path      <path>           path to git repo to prepare; if not passed current directory is used
+  -n | --name      <user_name>      user name to set to git config: git config user.name <user_name>
+  -e | --email     <user_email>     user email to set to git config: git config user.email <user_email>
+  -t | --ticket    <ticket_regex>   regex for the ticket to extract from the branch name
+  -r | --rm                         remove selected options actions
+
+Visit https://github.com/vadiku/gitprep for more information
 
 EOF
 }
@@ -44,6 +46,10 @@ while (($# > 0)); do # while arguments count>0
         fi
         shift
         ;;
+    -p | --path)
+        repo_path=$2
+        shift
+        ;;
     -r | --rm)
         remove_param=true
         shift
@@ -63,6 +69,21 @@ while (($# > 0)); do # while arguments count>0
     esac
 done
 
+# Prepare git repo hook path
+if [[ -z "$repo_path" ]]; then
+    repo_path=""
+else
+    repo_path="$repo_path/"
+fi
+
+if [[ ! -d "$repo_path.git" ]]; then
+    echo "'$repo_path' is not a git repository"
+    exit 1;
+fi
+
+full_path_to_hook="$repo_path.git/hooks/prepare-commit-msg"
+
+# Check what actions to apply and apply them accordingly
 if [[ ! -z "$user_name" ]]; then
     git config user.name "$user_name"
 fi
@@ -75,10 +96,11 @@ if [[ ! -z "$tickets_regexp" ]]; then
     hook_template=`cat scripts/enrich_commit_message_with_ticket`
     tickets_template="{{tickets}}"
     commit_msg_hook=$(echo "$hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
-    echo "$commit_msg_hook" > .git/hooks/prepare-commit-msg
-    chmod +x .git/hooks/prepare-commit-msg
+    echo "$commit_msg_hook" > $full_path_to_hook
+    chmod +x $full_path_to_hook
 fi
 
+# Apply remove parameter
 if [[ $remove_param == true ]]; then
     if [[ $name_param == true ]]; then
         git config user.name ""
@@ -89,6 +111,6 @@ if [[ $remove_param == true ]]; then
     fi
 
     if [[ $ticket_param == true ]]; then
-        rm -f .git/hooks/prepare-commit-msg
+        rm -f $full_path_to_hook
     fi
 fi
