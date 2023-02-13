@@ -5,7 +5,7 @@
 # Date: 2023-02-11
 ###########################
 
-version="0.0.1"
+version="0.0.3"
 
 script_name=$(basename "$0")
 
@@ -93,7 +93,7 @@ if [[ ! -z "$user_email" ]]; then
 fi
 
 if [[ ! -z "$tickets_regexp" ]]; then
-    parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+    parent_path=$HOMEBREW_CELLAR/gitprep/$version/bin/
     hook_template=`cat $parent_path/scripts/enrich_commit_message_with_ticket`
     tickets_template="{{tickets}}"
     commit_msg_hook=$(echo "$hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
