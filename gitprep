@@ -93,7 +93,8 @@ if [[ ! -z "$user_email" ]]; then
 fi
 
 if [[ ! -z "$tickets_regexp" ]]; then
-    hook_template=`cat scripts/enrich_commit_message_with_ticket`
+    parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+    hook_template=`cat $parent_path/scripts/enrich_commit_message_with_ticket`
     tickets_template="{{tickets}}"
     commit_msg_hook=$(echo "$hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
     echo "$commit_msg_hook" > $full_path_to_hook
