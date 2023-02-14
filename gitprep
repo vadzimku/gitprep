@@ -5,7 +5,7 @@
 # Date: 2023-02-11
 ###########################
 
-version="0.0.3"
+version="0.0.4"
 
 script_name=$(basename "$0")
 
@@ -26,6 +26,23 @@ Visit https://github.com/vadiku/gitprep for more information
 EOF
 }
 
+# Define prepare-commit-msg hook template
+read -d '' commit_hook_template << EOF
+#!/bin/bash
+FILE=\$1
+MESSAGE=\$(cat \$FILE)
+TICKET=\$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\w+/)?(?i)({{tickets}})[-][0-9]+' | grep -Eo '(?i)({{tickets}})[-][0-9]+' | tr "[:lower:]" "[:upper:]")
+if [[ \$TICKET == "" ]];then
+  echo "Branch does not contain ticket information, skipping commit"
+  exit 1;
+elif [[ \$MESSAGE == "Merge"* || "\$MESSAGE" == "\$TICKET"* ]];then
+  exit 0;
+else
+  echo "\$TICKET \$MESSAGE" > \$FILE
+fi
+EOF
+
+# Read command line options
 while (($# > 0)); do # while arguments count>0
     case "$1" in
     -n | --name)
@@ -91,12 +108,9 @@ fi
 if [[ ! -z "$user_email" ]]; then
     git config user.email "$user_email"
 fi
-
 if [[ ! -z "$tickets_regexp" ]]; then
-    parent_path=$HOMEBREW_CELLAR/gitprep/$version/bin/
-    hook_template=`cat $parent_path/scripts/enrich_commit_message_with_ticket`
     tickets_template="{{tickets}}"
-    commit_msg_hook=$(echo "$hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
+    commit_msg_hook=$(echo "$commit_hook_template" | sed -e "s/${tickets_template}/${tickets_regexp}/g")
     echo "$commit_msg_hook" > $full_path_to_hook
     chmod +x $full_path_to_hook
 fi
