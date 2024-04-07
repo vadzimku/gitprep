@@ -2,7 +2,7 @@
 
 ## Installation
 
-`$ brew tap vadiku/gitprep` \
+`$ brew tap vadzimku/gitprep` \
 `$ brew install gitprep`
 
 ## Usage
